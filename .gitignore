@@ -1,2 +1,19 @@
-# ===== IDE / 编辑器 =====
+#
+# 编译产物
+*.exe
+*.out
+
+# 依赖目录
+vendor/
+
+# IDE 配置
 .idea/
+.vscode/
+*.swp
+
+# 敏感配置
+.env
+config-prod.yml
+
+# 数据库文件（运行时生成，不需要提交）
+todos.db
