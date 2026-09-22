@@ -12,5 +12,5 @@ type Todo struct {
 	DueDate     *string    `json:"due_date,omitempty"`
 	CreatedAt   time.Time  `json:"created_at"`
 	UpdateAt    time.Time  `json:"update_at"`
-	CompletedAt *time.Time `json:"completed_at"`
+	CompletedAt *time.Time `json:"completed_at,omitempty"`
 }
