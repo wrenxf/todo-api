@@ -31,3 +31,21 @@ type TodoUpdateRequest struct {
 	Priority    *string `json:"priority,omitempty" binding:"oneof=low medium high"`
 	DueDate     *string `json:"due_date,omitempty"`
 }
+
+// APIResponse 通用API响应
+type APIResponse struct {
+	Success   bool        `json:"success"`
+	Message   string      `json:"message,omitempty"`
+	Data      interface{} `json:"data,omitempty"`
+	Error     string      `json:"error,omitempty"`
+	Timestamp time.Time   `json:"timestamp"`
+}
+
+// PaginatedResponse 分页响应
+type PaginatedResponse struct {
+	Items     interface{} `json:"items"`
+	Page      int         `json:"page"`
+	PageSize  int         `json:"page_size"`
+	Total     int         `json:"total"`
+	TotalPage int         `json:"total_page"`
+}
