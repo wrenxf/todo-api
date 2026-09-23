@@ -99,4 +99,5 @@ func initDatabase() *sql.DB {
 	if err := seedData(db); err != nil {
 		log.Fatal("初始化示例数据失败:", err)
 	}
+	return db
 }
