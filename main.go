@@ -116,3 +116,62 @@ type TodoFilter struct {
 	Page     int
 	PageSize int
 }
+
+// TodoServiceImpl 任务服务实现
+// TodoServiceImpl 是任务服务接口的具体实现结构体，内部持有数据库连接
+type TodoServiceImpl struct {
+	db *sql.DB
+}
+
+// NewTodoService 是任务服务的构造函数，通过依赖注入的方式接收数据库连接，并返回服务接口
+func NewTodoService(db *sql.DB) TodoService {
+	return &TodoServiceImpl{db: db}
+}
+
+func (s *TodoServiceImpl) Create(todo *Todo) error {
+	query := `
+	insert into todos(title,description,status,priority,due_date,created_at,updated_at)
+	values(?,?,?,?,?,?,?)
+`
+	now := time.Now()
+	todo.CreatedAt = now
+	todo.UpdateAt = now
+	if todo.State == "" {
+		todo.State = "pending"
+	}
+	result, err := s.db.Exec(query, todo.Title, todo.Description, todo.State, todo.Priority, todo.DueDate, todo.CreatedAt, todo.UpdateAt)
+	if err != nil {
+		return fmt.Errorf("创建任务失败: %w", err)
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return fmt.Errorf("获取任务ID失败: %w", err)
+	}
+	todo.ID = int(id)
+	return nil
+}
+
+func (t TodoServiceImpl) GetByID(id int) (*Todo, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (t TodoServiceImpl) Update(todo *Todo) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (t TodoServiceImpl) Delete(id int) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (t TodoServiceImpl) List(filter TodoFilter) ([]Todo, int, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (t TodoServiceImpl) ToggleStatus(id int, status string) error {
+	//TODO implement me
+	panic("implement me")
+}
