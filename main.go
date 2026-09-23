@@ -1,6 +1,10 @@
 package main
 
-import "time"
+import (
+	"database/sql"
+	"fmt"
+	"time"
+)
 
 // Todo 任务结构体
 type Todo struct {
@@ -48,4 +52,26 @@ type PaginatedResponse struct {
 	PageSize  int         `json:"page_size"`
 	Total     int         `json:"total"`
 	TotalPage int         `json:"total_page"`
+}
+
+// 创建数据库表
+func createTable(db *sql.DB) error {
+	query := `
+	create table if not exists todos(
+	id integer primary key autoincrement,
+	title varchar(200) not null,
+	description text,
+	status varchar(20) default 'pending' check(status in('pending','completed','cancelled')),
+	priority charchar(10) default 'medium' check(priotity in('low','medium','high')),
+	due_date date,
+	create_at datetime default current_timesatmp,
+	updated_at datetime default current_timesatmp,
+	complete_at datetime
+	);
+`
+	_, err := db.Exec(query)
+	if err != nil {
+		return fmt.Errorf("创建任务表失败:%w", err)
+	}
+
 }
