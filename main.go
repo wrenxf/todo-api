@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -74,4 +75,28 @@ func createTable(db *sql.DB) error {
 		return fmt.Errorf("创建任务表失败:%w", err)
 	}
 	return nil
+}
+
+// 初始化数据库
+func initDatabase() *sql.DB {
+	//打开数据库连接
+	db, err := sql.Open("sqlite3", "./todos.db")
+	if err != nil {
+		log.Fatal("数据库连接失败:", err)
+	}
+
+	//检查连接是否健康,测试连接
+	if err := db.Ping(); err != nil {
+		log.Fatal("数据库连接测试失败:", err)
+	}
+
+	//建表
+	if err := createTable(db); err != nil {
+		log.Fatal("数据库创建失败:", err)
+	}
+
+	//初始化测试数据
+	if err := seedData(db); err != nil {
+		log.Fatal("初始化示例数据失败:", err)
+	}
 }
