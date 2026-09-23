@@ -97,3 +97,22 @@ func initDatabase() *sql.DB {
 
 	return db
 }
+
+// TodoService 任务服务接口
+type TodoService interface {
+	Create(todo *Todo) error
+	GetByID(id int) (*Todo, error)
+	Update(todo *Todo) error
+	Delete(id int) error
+	List(filter TodoFilter) ([]Todo, int, error)
+	ToggleStatus(id int, status string) error
+}
+
+// TodoFilter 任务查询过滤器
+type TodoFilter struct {
+	Status   string
+	Priority string
+	Search   string
+	Page     int
+	PageSize int
+}
