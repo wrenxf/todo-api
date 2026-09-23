@@ -73,5 +73,5 @@ func createTable(db *sql.DB) error {
 	if err != nil {
 		return fmt.Errorf("创建任务表失败:%w", err)
 	}
-
+	return nil
 }
