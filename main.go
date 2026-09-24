@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -128,6 +129,9 @@ func NewTodoService(db *sql.DB) TodoService {
 	return &TodoServiceImpl{db: db}
 }
 
+// Create 创建一个新的待办任务
+// 该方法会自动设置任务的创建时间、更新时间，如果状态为空则默认为 pending
+// 插入成功后，会将数据库生成的自增 ID 回填到传入的 todo 结构体中
 func (s *TodoServiceImpl) Create(todo *Todo) error {
 	query := `
 	insert into todos(title,description,status,priority,due_date,created_at,updated_at)
@@ -151,9 +155,33 @@ func (s *TodoServiceImpl) Create(todo *Todo) error {
 	return nil
 }
 
-func (t TodoServiceImpl) GetByID(id int) (*Todo, error) {
-	//TODO implement me
-	panic("implement me")
+// GetByID 根据指定的任务 ID 查询对应的待办任务详情
+// 参数 id: 待查询的任务唯一标识
+// 返回值: 查询成功返回包含任务信息的结构体指针；失败返回带有上下文信息的错误
+func (s TodoServiceImpl) GetByID(id int) (*Todo, error) {
+	query := `
+	select id,title,description,status,priority,due_date,created_at,updated_at
+	from todo
+	where id=?
+`
+	todo := &Todo{}
+	err := s.db.QueryRow(query, id).Scan(
+		&todo.ID,
+		&todo.Title,
+		&todo.Description,
+		&todo.State,
+		&todo.Priority,
+		&todo.DueDate,
+		&todo.CreatedAt,
+		&todo.UpdateAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("任务不存在: id=%d", id)
+		}
+		return nil, fmt.Errorf("查询任务失败: %w", err)
+	}
+	return todo, nil
 }
 
 func (t TodoServiceImpl) Update(todo *Todo) error {
