@@ -216,9 +216,23 @@ func (s TodoServiceImpl) Update(todo *Todo) error {
 	return nil
 }
 
-func (t TodoServiceImpl) Delete(id int) error {
-	//TODO implement me
-	panic("implement me")
+func (s TodoServiceImpl) Delete(id int) error {
+	query := `
+	delete from todos
+	where id=?
+`
+	result, err := s.db.Exec(query)
+	if err != nil {
+		return fmt.Errorf("更新任务失败:%w", err)
+	}
+	rowAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("获取更新任务结果失败:%w", err)
+	}
+	if rowAffected == 0 {
+		return fmt.Errorf("任务不存在:id=%d", id)
+	}
+	return nil
 }
 
 func (t TodoServiceImpl) List(filter TodoFilter) ([]Todo, int, error) {
