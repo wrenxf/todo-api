@@ -184,9 +184,36 @@ func (s TodoServiceImpl) GetByID(id int) (*Todo, error) {
 	return todo, nil
 }
 
-func (t TodoServiceImpl) Update(todo *Todo) error {
-	//TODO implement me
-	panic("implement me")
+func (s TodoServiceImpl) Update(todo *Todo) error {
+	query := `
+	update todos
+	set title=?,description=?,status=?,priority=?,due_date=?,updated_at=?
+	where id=?
+`
+	todo.UpdateAt = time.Now()
+
+	result, err := s.db.Exec(query,
+		todo.Title,
+		todo.Description,
+		todo.State,
+		todo.Priority,
+		todo.DueDate,
+		todo.UpdateAt,
+		todo.ID,
+	)
+
+	if err != nil {
+		return fmt.Errorf("更新任务失败:%w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("获取更新结果失败:%w", err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("任务不存在:id=%d", todo.ID)
+	}
+	return nil
 }
 
 func (t TodoServiceImpl) Delete(id int) error {
