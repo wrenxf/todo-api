@@ -221,7 +221,7 @@ func (s TodoServiceImpl) Delete(id int) error {
 	delete from todos
 	where id=?
 `
-	result, err := s.db.Exec(query)
+	result, err := s.db.Exec(query, id)
 	if err != nil {
 		return fmt.Errorf("更新任务失败:%w", err)
 	}
