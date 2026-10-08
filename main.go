@@ -289,7 +289,16 @@ func (s TodoServiceImpl) List(filter TodoFilter) ([]Todo, int, error) {
 			&todo.ID, &todo.Title, &todo.Description, &todo.Status, &todo.Priority,
 			&todo.DueDate, &todo.CreatedAt, &todo.UpdatedAt, &completedAt,
 		)
+
+		if err != nil {
+			return nil, 0, fmt.Errorf("扫描任务数据失败: %w", err)
+		}
+		if completedAt.Valid {
+			todo.CompletedAt = &completedAt.Time
+		}
+		todos = append(todos, *todo)
 	}
+	return todos, total, nil
 }
 
 func (t TodoServiceImpl) ToggleStatus(id int, status string) error {
