@@ -13,11 +13,11 @@ type Todo struct {
 	ID          int        `json:"id"`
 	Title       string     `json:"title" binding:"required,min=1,max=200"`
 	Description string     `json:"description" binding:"max=1000"`
-	State       string     `json:"state" binding:"oneof=pending completed cancelled"`
+	Status      string     `json:"status" binding:"oneof=pending completed cancelled"`
 	Priority    string     `json:"priority" binding:"oneof=low medium high"`
 	DueDate     *string    `json:"due_date,omitempty"`
 	CreatedAt   time.Time  `json:"created_at"`
-	UpdateAt    time.Time  `json:"update_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
 	CompletedAt *time.Time `json:"completed_at,omitempty"`
 }
 
@@ -111,11 +111,11 @@ type TodoService interface {
 
 // TodoFilter 任务查询过滤器
 type TodoFilter struct {
-	Status   string
-	Priority string
-	Search   string
-	Page     int
-	PageSize int
+	Status   string //任务状态筛选
+	Priority string //优先级筛选
+	Search   string //关键词搜索
+	Page     int    //当前页码
+	PageSize int    //每页条数
 }
 
 // TodoServiceImpl 任务服务实现
@@ -139,11 +139,11 @@ func (s *TodoServiceImpl) Create(todo *Todo) error {
 `
 	now := time.Now()
 	todo.CreatedAt = now
-	todo.UpdateAt = now
-	if todo.State == "" {
-		todo.State = "pending"
+	todo.UpdatedAt = now
+	if todo.Status == "" {
+		todo.Status = "pending"
 	}
-	result, err := s.db.Exec(query, todo.Title, todo.Description, todo.State, todo.Priority, todo.DueDate, todo.CreatedAt, todo.UpdateAt)
+	result, err := s.db.Exec(query, todo.Title, todo.Description, todo.Status, todo.Priority, todo.DueDate, todo.CreatedAt, todo.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("创建任务失败: %w", err)
 	}
@@ -169,11 +169,11 @@ func (s TodoServiceImpl) GetByID(id int) (*Todo, error) {
 		&todo.ID,
 		&todo.Title,
 		&todo.Description,
-		&todo.State,
+		&todo.Status,
 		&todo.Priority,
 		&todo.DueDate,
 		&todo.CreatedAt,
-		&todo.UpdateAt,
+		&todo.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -190,15 +190,15 @@ func (s TodoServiceImpl) Update(todo *Todo) error {
 	set title=?,description=?,status=?,priority=?,due_date=?,updated_at=?
 	where id=?
 `
-	todo.UpdateAt = time.Now()
+	todo.UpdatedAt = time.Now()
 
 	result, err := s.db.Exec(query,
 		todo.Title,
 		todo.Description,
-		todo.State,
+		todo.Status,
 		todo.Priority,
 		todo.DueDate,
-		todo.UpdateAt,
+		todo.UpdatedAt,
 		todo.ID,
 	)
 
@@ -235,9 +235,61 @@ func (s TodoServiceImpl) Delete(id int) error {
 	return nil
 }
 
-func (t TodoServiceImpl) List(filter TodoFilter) ([]Todo, int, error) {
-	//TODO implement me
-	panic("implement me")
+func (s TodoServiceImpl) List(filter TodoFilter) ([]Todo, int, error) {
+	//构建where条件
+	whereClause := "where 1=1"
+	args := []interface{}{}
+
+	if filter.Status != "" {
+		whereClause += "and status = ?"
+		args = append(args, filter.Status)
+	}
+
+	if filter.Priority != "" {
+		whereClause += "and priority = ?"
+		args = append(args, filter.Priority)
+	}
+
+	if filter.Search != "" {
+		whereClause += "and (title like ? or description like ?)"
+		searchTerm := "%" + whereClause + "%"
+		args = append(args, searchTerm, searchTerm)
+	}
+
+	//获取总数
+	countQuery := "select count(*) from todos" + whereClause
+	var total int
+	err := s.db.QueryRow(countQuery, args...).Scan(&total)
+	if err != nil {
+		return nil, 0, fmt.Errorf("获取任务总数失败: %w", err)
+	}
+
+	//分页查询
+	query := `
+	select id,title,description,status,priority,due_date,created_at,updated_at,completed_at
+	from todos` + whereClause + `
+	order by created_at desc,priority desc
+	limit ? offset ?
+`
+	offset := (filter.Page - 1) * filter.PageSize
+	args = append(args, filter.PageSize, offset)
+	rows, err := s.db.Query(query, args...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("查询任务列表失败:%w", err)
+	}
+	defer rows.Close()
+
+	var todos []Todo
+
+	for rows.Next() {
+		todo := &Todo{}
+		var completedAt sql.NullTime
+
+		err := rows.Scan(
+			&todo.ID, &todo.Title, &todo.Description, &todo.Status, &todo.Priority,
+			&todo.DueDate, &todo.CreatedAt, &todo.UpdatedAt, &completedAt,
+		)
+	}
 }
 
 func (t TodoServiceImpl) ToggleStatus(id int, status string) error {
