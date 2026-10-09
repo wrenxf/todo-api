@@ -308,8 +308,8 @@ func (s TodoServiceImpl) ToggleStatus(id int, status string) (*Todo, error) {
 
 	err := s.db.QueryRow(
 		`select id,title,description,status,priority,due_date,created_at,updated_at,completed_at
-			   from todos where id = ?,id,
-		`).Scan(&todo.ID,
+			   from todos where id = ?`,
+		id).Scan(&todo.ID,
 		&todo.Title,
 		&todo.Description,
 		&todo.Status,
@@ -317,7 +317,7 @@ func (s TodoServiceImpl) ToggleStatus(id int, status string) (*Todo, error) {
 		&todo.DueDate,
 		&todo.CreatedAt,
 		&todo.UpdatedAt,
-		&todo.CompletedAt)
+		&completdAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("任务不存在:%d", id)
@@ -342,9 +342,12 @@ func (s TodoServiceImpl) ToggleStatus(id int, status string) (*Todo, error) {
 
 	// 将新状态和完成时间写回数据库
 	_, err = s.db.Exec(`
-		update todos set status = ?,completed_at = ?,updated_at = ? where id =?,
-		todo.Status,todo.CompletedAt,todo.UpdatedAt,todo.ID
-`)
+		update todos set status = ?,completed_at = ?,updated_at = ? where id =?`,
+		todo.Status,
+		todo.CompletedAt,
+		todo.UpdatedAt,
+		todo.ID,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("任务状态更新失败: %w", err)
 	}
