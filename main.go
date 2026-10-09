@@ -301,7 +301,53 @@ func (s TodoServiceImpl) List(filter TodoFilter) ([]Todo, int, error) {
 	return todos, total, nil
 }
 
-func (t TodoServiceImpl) ToggleStatus(id int, status string) error {
-	//TODO implement me
-	panic("implement me")
+// ToggleStatus 切换任务完成状态：pending <-> completed
+func (s TodoServiceImpl) ToggleStatus(id int, status string) (*Todo, error) {
+	var todo Todo
+	var completdAt sql.NullTime
+
+	err := s.db.QueryRow(
+		`select id,title,description,status,priority,due_date,created_at,updated_at,completed_at
+			   from todos where id = ?,id,
+		`).Scan(&todo.ID,
+		&todo.Title,
+		&todo.Description,
+		&todo.Status,
+		&todo.Priority,
+		&todo.DueDate,
+		&todo.CreatedAt,
+		&todo.UpdatedAt,
+		&todo.CompletedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("任务不存在:%d", id)
+		}
+		return nil, fmt.Errorf("查询任务失败%w", err)
+	}
+	if completdAt.Valid {
+		todo.CompletedAt = &completdAt.Time
+	}
+
+	if todo.Status == "completed" {
+		todo.Status = "pending"
+		todo.CompletedAt = nil
+	} else {
+		todo.Status = "completed"
+
+		//now:=time.Now()
+		//todo.CompletedAt=&now
+
+		todo.CompletedAt = new(time.Now())
+	}
+
+	// 将新状态和完成时间写回数据库
+	_, err = s.db.Exec(`
+		update todos set status = ?,completed_at = ?,updated_at = ? where id =?,
+		todo.Status,todo.CompletedAt,todo.UpdatedAt,todo.ID
+`)
+	if err != nil {
+		return nil, fmt.Errorf("任务状态更新失败: %w", err)
+	}
+
+	return &todo, nil
 }
