@@ -106,7 +106,7 @@ type TodoService interface {
 	Update(todo *Todo) error
 	Delete(id int) error
 	List(filter TodoFilter) ([]Todo, int, error)
-	ToggleStatus(id int, status string) error
+	ToggleStatus(id int, status string) (*Todo, error)
 }
 
 // TodoFilter 任务查询过滤器
