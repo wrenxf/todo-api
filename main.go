@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 // Todo 任务结构体
@@ -353,4 +355,35 @@ func (s TodoServiceImpl) ToggleStatus(id int, status string) (*Todo, error) {
 	}
 
 	return &todo, nil
+}
+
+func setupRoutes(r *gin.Engine) {
+	//api路由
+	api := r.Group("/api")
+	{
+		//健康检查
+		api.GET("/health", handleHealth)
+
+		//api文档
+		api.GET("/docs", handleDocs)
+
+		//任务路由
+		todos := api.Group("/todos")
+		{
+			// 获取任务列表
+			todos.GET("", handleListTodos)
+			// 创建新任务
+			todos.POST("", handleCreateTodo)
+			// 获取单个任务详情
+			todos.GET("/:id", handleGetTodo)
+			// 完整更新某个任务
+			todos.PUT("/:id", handleUpdateTodo)
+			// 删除某个任务
+			todos.DELETE("/:id", handleDeleteTodo)
+			// 切换某个任务的完成状态
+			todos.PATCH("/:id/toggle", handleToggleTodo)
+			// 获取任务统计信息
+			todos.GET("/statistics", handleTodoStatistics)
+		}
+	}
 }
